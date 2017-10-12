@@ -2,17 +2,27 @@
 
 document.addEventListener("DOMContentLoaded", function() {
     var initSlider = function(autoSpeed, arrows, dots) {
-        var sliderBody = document.getElementsByClassName("js-slider-body")[0],
+        var slider = document.getElementsByClassName("js-slider")[0],
             sliderItem = document.getElementsByClassName("js-slider-item"),
             sliderTrack = document.getElementsByClassName("js-slider-track")[0],
+            sliderBody = document.getElementsByClassName("js-slider-body")[0],
             prevBtn = document.getElementsByClassName("js-prev")[0],
             nextBtn = document.getElementsByClassName("js-next")[0],
             curSlide = 0,
             slidesCount = sliderItem.length,
-            moved = 0,
+            moved = -sliderItem[0].offsetWidth,
             autoMove;
 
-        sliderTrack.style.width = sliderItem.length * 200 + "px";
+        sliderTrack.style.minWidth =  sliderItem[0].offsetWidth * (slidesCount + 1) + "px";
+
+        // math slider body width
+
+        var mathWidth = function() {
+            var wholeItems = Math.floor(sliderBody.offsetWidth / sliderItem[0].offsetWidth);
+            sliderBody.style.width = sliderItem[0].offsetWidth * wholeItems + "px";
+        };
+
+        mathWidth();
 
         // set keys for slides
 
@@ -24,29 +34,141 @@ document.addEventListener("DOMContentLoaded", function() {
 
         countItems();
 
+        // add slide to left
+
+        var addItems = function() {
+            var lastItem = sliderItem[slidesCount - 1];
+            var itemCloned = lastItem.cloneNode(true);
+            sliderTrack.insertBefore(itemCloned, sliderTrack.firstChild);
+            lastItem.parentNode.removeChild(lastItem);
+        };
+
+        addItems();
+
         // automove
 
         var sliderMove = function () {
             autoMove = setInterval(function () {
-                if (curSlide === (sliderItem.length - 3)) {
-                    moved = 0;
+                moved -= 200;
+                if(curSlide === slidesCount - 1) {
                     curSlide = 0;
-                    sliderTrack.style.transform = "translateX(" + moved + "px)";
                 } else {
-                    moved -= 200;
                     curSlide++;
-                    sliderTrack.style.transform = "translateX(" + moved + "px)";
                 }
+                sliderTrack.style.transform = "translateX(" + moved + "px)";
+                moveItems(false, 1);
+                activeDot();
             }, autoSpeed);
         };
 
-        sliderMove();
+        // sliderMove();
+
+        // slides move on step
+
+        var moveItems = function(side, moves) {
+            slider.classList.add("disable");
+            if(side === true) {
+                setTimeout(function(){
+                    var lastItem = sliderItem[sliderItem.length - 1];
+                    var cloneSlide = lastItem.cloneNode(true);
+                    sliderTrack.style.transition = "0s";
+                    moved = moved - sliderItem[0].offsetWidth;
+                    sliderTrack.style.transform = "translateX(" + moved + "px)";
+                    sliderTrack.insertBefore(cloneSlide, sliderTrack.firstChild);
+                    lastItem.parentNode.removeChild(lastItem);
+                }, 800);
+                setTimeout(function(){
+                    sliderTrack.style.transition = "transform 0.8s";
+                    slider.classList.remove("disable");
+                }, 830);
+            } else {
+                for(var i = 0; i < moves; i++) {
+                    var cloneSlide = sliderItem[i].cloneNode(true);
+                    sliderTrack.appendChild(cloneSlide);
+                    console.log(cloneSlide);
+                }
+                setTimeout(function(){
+                    sliderTrack.style.transition = "0s";
+                    console.log(moves);
+                    moved = moved + (sliderItem[0].offsetWidth * moves);
+                    for(var i = 0; i < moves; i++) {
+                        sliderItem[0].parentNode.removeChild(sliderItem[0]);
+                    }
+                    sliderTrack.style.transform = "translateX(" + moved + "px)";
+
+                }, 800);
+                setTimeout(function(){
+                    sliderTrack.style.transition = "transform 0.8s";
+                    slider.classList.remove("disable");
+                }, 830);
+            }
+        };
+
+        // check for dots
+
+        var addDots = function() {
+            var dotsBlock = document.createElement("div");
+            dotsBlock.className = "slider-dots-block";
+            slider.appendChild(dotsBlock);
+            for(var i = 0; i < slidesCount; i++) {
+                var dotItem = document.createElement("button");
+                dotItem.className = "slider-dot js-dotBtn";
+                dotItem.setAttribute("data-key", i);
+                dotsBlock.appendChild(dotItem);
+            }
+
+            document.addEventListener("click", function(e){
+                if(slider.classList.contains("disable")) {
+                    return false;
+                }
+                if(e.target.classList.contains("js-dotBtn")) {
+                    var dotInd = e.target.getAttribute("data-key");
+                    var stepsTo = curSlide - dotInd;
+                    if(stepsTo < 0) {
+                        moved = moved + (sliderItem[0].offsetWidth * stepsTo);
+                    } else {
+                        stepsTo = slidesCount - stepsTo;
+                        moved = moved - (sliderItem[0].offsetWidth * stepsTo);
+                    }
+                    curSlide = dotInd;
+                    stepsTo = stepsTo < 0 ? -stepsTo : stepsTo;
+                    moveItems(false, stepsTo);
+                    setPos();
+                }
+            })
+        };
+
+        if(dots === true) {
+            addDots();
+        }
+
+        // active dot
+
+        var activeDot = function() {
+            if(document.getElementsByClassName("js-dotBtn active").length !== 0) {
+                document.getElementsByClassName("js-dotBtn active")[0].classList.remove("active");
+            }
+            document.getElementsByClassName("js-dotBtn")[curSlide].classList.add("active");
+        };
+
+        activeDot();
 
         // set new position
 
-        var setPos = function() {
-            sliderTrack.style.transform = "translateX(" + moved + "px)";
+        var setPos = function(fast) {
+            if(fast === undefined) {
+                sliderTrack.style.transform = "translateX(" + moved + "px)";
+            } else {
+                sliderTrack.style.transition = "0s";
+                sliderTrack.style.transform = "translateX(" + moved + "px)";
+                setTimeout(function() {
+                    sliderTrack.style.transition = "transform 0.8s"
+                }, 10);
+            }
+            activeDot();
         };
+
+        setPos(true);
 
         // check for arrows
 
@@ -56,31 +178,36 @@ document.addEventListener("DOMContentLoaded", function() {
 
             prevBtn.className = "slider-btn js-prev";
             prevBtn.textContent = "Prev";
-            sliderBody.appendChild(prevBtn);
+            slider.appendChild(prevBtn);
             prevBtn.addEventListener("click", function () {
-                    if (curSlide === 0) {
-                    moved = -(sliderTrack.offsetWidth - 600);
-                    curSlide = slidesCount - 3;
-                    setPos();
+                if(slider.classList.contains("disable")) {
+                    return false;
+                }
+                if(curSlide === 0) {
+                    curSlide = slidesCount - 1;
                 } else {
                     curSlide--;
-                    moved = 200 + moved;
-                    setPos();
                 }
+
+                moved = 200 + moved;
+                moveItems(true, 1);
+                setPos();
             });
             nextBtn.className = "slider-btn slider-btn--next js-next";
             nextBtn.textContent = "Next";
-            sliderBody.appendChild(nextBtn);
+            slider.appendChild(nextBtn);
             nextBtn.addEventListener("click", function () {
-                if (curSlide === (sliderItem.length - 3)) {
-                    moved = 0;
+                if(slider.classList.contains("disable")) {
+                    return false;
+                }
+                if(curSlide === slidesCount - 1) {
                     curSlide = 0;
-                    setPos();
                 } else {
                     curSlide++;
-                    moved = -200 + moved;
-                    setPos();
                 }
+                moved = -200 + moved;
+                moveItems(false, 1);
+                setPos();
             });
         };
 
@@ -88,51 +215,13 @@ document.addEventListener("DOMContentLoaded", function() {
             addArrows();
         }
 
-        // check for dots
-
-        var addDots = function() {
-            var dotsBlock = document.createElement("div");
-            dotsBlock.className = "slider-dots-block";
-            sliderBody.appendChild(dotsBlock);
-            for(var i = 0; i < slidesCount; i++) {
-                var dotItem = document.createElement("button");
-                dotItem.className = "slider-dot js-dotBtn";
-                dotItem.setAttribute("data-key", i);
-                dotsBlock.appendChild(dotItem);
-            }
-
-            document.addEventListener("click", function(e){
-                if(e.target.classList.contains("js-dotBtn")) {
-                    var dotInd = e.target.getAttribute("data-key");
-                    var stepsTo = curSlide - dotInd;
-                    if ((slidesCount - 1) - dotInd === 0) {
-                        curSlide = parseInt(slidesCount - 3);
-                        moved = moved + ((stepsTo + 2) * 200);
-                        setPos();
-                    } else if((slidesCount - 1) - dotInd === 1) {
-                        curSlide = parseInt(slidesCount - 3);
-                        moved = moved + ((stepsTo + 1) * 200);
-                        setPos();
-                    } else {
-                        curSlide = parseInt(dotInd);
-                        moved = moved + (stepsTo * 200);
-                        setPos();
-                    }
-                }
-            })
-        };
-
-        if(dots === true) {
-            addDots();
-        }
-
         // automove off on hover
 
-        sliderBody.addEventListener("mouseenter", function () {
+        slider.addEventListener("mouseenter", function () {
             clearInterval(autoMove);
         });
 
-        sliderBody.addEventListener("mouseleave", function () {
+        slider.addEventListener("mouseleave", function () {
             sliderMove();
         });
     };
