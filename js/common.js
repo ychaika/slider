@@ -1,56 +1,114 @@
 "use strict";
 
 document.addEventListener("DOMContentLoaded", function() {
-    var initSlider = function(autoSpeed, arrows, dots) {
-        var slider = document.getElementsByClassName("js-slider")[0],
-            sliderItem = document.getElementsByClassName("js-slider-item"),
+
+    var imgList = [
+        {
+            "id": 0,
+            "src" : "./img/slide-1.jpg"
+        },
+        {
+            "id": 1,
+            "src" : "./img/slide-2.jpg"
+        },
+        {
+            "id": 2,
+            "src" : "./img/slide-3.jpg"
+        },
+        {
+            "id": 3,
+            "src" : "./img/slide-4.jpg"
+        },
+        {
+            "id": 4,
+            "src" : "./img/slide-5.jpg"
+        },
+        {
+            "id": 5,
+            "src" : "./img/slide-6.jpg"
+        }
+    ];
+
+    function MySlider() {
+        var slider,
+            sliderItems,
             sliderTrack = document.getElementsByClassName("js-slider-track")[0],
             sliderBody = document.getElementsByClassName("js-slider-body")[0],
-            prevBtn = document.getElementsByClassName("js-prev")[0],
-            nextBtn = document.getElementsByClassName("js-next")[0],
             curSlide = 0,
-            slidesCount = sliderItem.length,
-            moved = -sliderItem[0].offsetWidth,
+            slidesCount,
+            moved,
+            self = this,
             autoMove;
 
-        sliderTrack.style.minWidth =  sliderItem[0].offsetWidth * (slidesCount + 1) + "px";
+        this.autoSpeed = 4000;
+        this.arrows = true;
+        this.dots = true;
+        this.init = function(DOMAINName, imagePathList) {
+            createSlides(imagePathList);
+            slider = document.getElementsByClassName(DOMAINName)[0];
+            sliderItems = document.getElementsByClassName("js-slider-item");
+            slidesCount = sliderItems.length;
+            moved = -sliderItems[0].offsetWidth;
+            sliderTrack.style.minWidth =  sliderItems[0].offsetWidth * (slidesCount + 1) + "px";
 
-        // math slider body width
-
-        var mathWidth = function() {
-            var wholeItems = Math.floor(sliderBody.offsetWidth / sliderItem[0].offsetWidth);
-            sliderBody.style.width = sliderItem[0].offsetWidth * wholeItems + "px";
-        };
-
-        mathWidth();
-
-        // set keys for slides
-
-        var countItems = function () {
-            for (var i = 0; i < sliderItem.length; i++) {
-                sliderItem[i].setAttribute("data-ket", "" + i);
+            mathWidth();
+            countItems();
+            addItems();
+            if(this.dots === true) {
+                addDots();
             }
+            sliderMove();
+            setPos(true);
+            activeDot();
+            if(this.arrows === true) {
+                addArrows();
+            }
+
+            slider.addEventListener("mouseenter", function () {
+                clearInterval(autoMove);
+            });
+
+            slider.addEventListener("mouseleave", function () {
+                sliderMove();
+            });
         };
 
-        countItems();
+        function createSlides (imagePathList) {
+            for(var i = 0; i < imagePathList.length; i++) {
+                var newSlide = document.createElement("div");
+                var slideInner = document.createElement("div");
+                var slideImg = document.createElement("img");
+                newSlide.className = "slider-item js-slider-item";
+                slideInner.className = "slider-item-inner";
+                slideImg.setAttribute("src", imagePathList[i]["src"]);
+                slideInner.appendChild(slideImg);
+                newSlide.appendChild(slideInner);
+                sliderTrack.appendChild(newSlide);
+            }
+        }
 
-        // add slide to left
+        function mathWidth () {
+            var wholeItems = Math.floor(sliderBody.offsetWidth / sliderItems[0].offsetWidth);
+            sliderBody.style.width = sliderItems[0].offsetWidth * wholeItems + "px";
+        }
 
-        var addItems = function() {
-            var lastItem = sliderItem[slidesCount - 1];
+        function countItems () {
+            for (var i = 0; i < sliderItems.length; i++) {
+                sliderItems[i].setAttribute("data-ket", "" + i);
+            }
+        }
+
+        function addItems () {
+            var lastItem = sliderItems[slidesCount - 1];
             var itemCloned = lastItem.cloneNode(true);
             sliderTrack.insertBefore(itemCloned, sliderTrack.firstChild);
             lastItem.parentNode.removeChild(lastItem);
-        };
+        }
 
-        addItems();
-
-        // automove
-
-        var sliderMove = function () {
+        function sliderMove () {
             autoMove = setInterval(function () {
                 moved -= 200;
-                if(curSlide === slidesCount - 1) {
+                if(curSlide === (slidesCount - 1)) {
                     curSlide = 0;
                 } else {
                     curSlide++;
@@ -58,21 +116,17 @@ document.addEventListener("DOMContentLoaded", function() {
                 sliderTrack.style.transform = "translateX(" + moved + "px)";
                 moveItems(false, 1);
                 activeDot();
-            }, autoSpeed);
-        };
+            }, self.autoSpeed);
+        }
 
-        // sliderMove();
-
-        // slides move on step
-
-        var moveItems = function(side, moves) {
+        function moveItems (side, moves) {
             slider.classList.add("disable");
             if(side === true) {
                 setTimeout(function(){
-                    var lastItem = sliderItem[sliderItem.length - 1];
+                    var lastItem = sliderItems[sliderItems.length - 1];
                     var cloneSlide = lastItem.cloneNode(true);
                     sliderTrack.style.transition = "0s";
-                    moved = moved - sliderItem[0].offsetWidth;
+                    moved = moved - sliderItems[0].offsetWidth;
                     sliderTrack.style.transform = "translateX(" + moved + "px)";
                     sliderTrack.insertBefore(cloneSlide, sliderTrack.firstChild);
                     lastItem.parentNode.removeChild(lastItem);
@@ -83,30 +137,25 @@ document.addEventListener("DOMContentLoaded", function() {
                 }, 830);
             } else {
                 for(var i = 0; i < moves; i++) {
-                    var cloneSlide = sliderItem[i].cloneNode(true);
+                    var cloneSlide = sliderItems[i].cloneNode(true);
                     sliderTrack.appendChild(cloneSlide);
-                    console.log(cloneSlide);
                 }
                 setTimeout(function(){
                     sliderTrack.style.transition = "0s";
-                    console.log(moves);
-                    moved = moved + (sliderItem[0].offsetWidth * moves);
+                    moved = moved + (sliderItems[0].offsetWidth * moves);
                     for(var i = 0; i < moves; i++) {
-                        sliderItem[0].parentNode.removeChild(sliderItem[0]);
+                        sliderItems[0].parentNode.removeChild(sliderItems[0]);
                     }
                     sliderTrack.style.transform = "translateX(" + moved + "px)";
-
                 }, 800);
                 setTimeout(function(){
                     sliderTrack.style.transition = "transform 0.8s";
                     slider.classList.remove("disable");
                 }, 830);
             }
-        };
+        }
 
-        // check for dots
-
-        var addDots = function() {
+        function addDots () {
             var dotsBlock = document.createElement("div");
             dotsBlock.className = "slider-dots-block";
             slider.appendChild(dotsBlock);
@@ -122,13 +171,13 @@ document.addEventListener("DOMContentLoaded", function() {
                     return false;
                 }
                 if(e.target.classList.contains("js-dotBtn")) {
-                    var dotInd = e.target.getAttribute("data-key");
+                    var dotInd = parseInt(e.target.getAttribute("data-key"));
                     var stepsTo = curSlide - dotInd;
                     if(stepsTo < 0) {
-                        moved = moved + (sliderItem[0].offsetWidth * stepsTo);
+                        moved = moved + (sliderItems[0].offsetWidth * stepsTo);
                     } else {
                         stepsTo = slidesCount - stepsTo;
-                        moved = moved - (sliderItem[0].offsetWidth * stepsTo);
+                        moved = moved - (sliderItems[0].offsetWidth * stepsTo);
                     }
                     curSlide = dotInd;
                     stepsTo = stepsTo < 0 ? -stepsTo : stepsTo;
@@ -136,26 +185,16 @@ document.addEventListener("DOMContentLoaded", function() {
                     setPos();
                 }
             })
-        };
-
-        if(dots === true) {
-            addDots();
         }
 
-        // active dot
-
-        var activeDot = function() {
+        function activeDot () {
             if(document.getElementsByClassName("js-dotBtn active").length !== 0) {
                 document.getElementsByClassName("js-dotBtn active")[0].classList.remove("active");
             }
             document.getElementsByClassName("js-dotBtn")[curSlide].classList.add("active");
-        };
+        }
 
-        activeDot();
-
-        // set new position
-
-        var setPos = function(fast) {
+        function setPos (fast) {
             if(fast === undefined) {
                 sliderTrack.style.transform = "translateX(" + moved + "px)";
             } else {
@@ -166,19 +205,22 @@ document.addEventListener("DOMContentLoaded", function() {
                 }, 10);
             }
             activeDot();
-        };
+        }
 
-        setPos(true);
-
-        // check for arrows
-
-        var addArrows = function () {
+        function addArrows () {
             var prevBtn = document.createElement("button"),
                 nextBtn = document.createElement("button");
 
             prevBtn.className = "slider-btn js-prev";
             prevBtn.textContent = "Prev";
             slider.appendChild(prevBtn);
+            nextBtn.className = "slider-btn slider-btn--next js-next";
+            nextBtn.textContent = "Next";
+            slider.appendChild(nextBtn);
+            attachArrowEvents(prevBtn, nextBtn);
+        }
+
+        function attachArrowEvents (prevBtn, nextBtn) {
             prevBtn.addEventListener("click", function () {
                 if(slider.classList.contains("disable")) {
                     return false;
@@ -188,14 +230,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 } else {
                     curSlide--;
                 }
-
                 moved = 200 + moved;
                 moveItems(true, 1);
                 setPos();
             });
-            nextBtn.className = "slider-btn slider-btn--next js-next";
-            nextBtn.textContent = "Next";
-            slider.appendChild(nextBtn);
             nextBtn.addEventListener("click", function () {
                 if(slider.classList.contains("disable")) {
                     return false;
@@ -209,23 +247,10 @@ document.addEventListener("DOMContentLoaded", function() {
                 moveItems(false, 1);
                 setPos();
             });
-        };
-
-        if(arrows === true) {
-            addArrows();
         }
+    }
 
-        // automove off on hover
-
-        slider.addEventListener("mouseenter", function () {
-            clearInterval(autoMove);
-        });
-
-        slider.addEventListener("mouseleave", function () {
-            sliderMove();
-        });
-    };
-
-    initSlider(5000, true, true);
-
+    const newSlider = new MySlider();
+    newSlider.autoSpeed = 2200;
+    newSlider.init("js-slider", imgList);
 });

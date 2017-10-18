@@ -59,6 +59,10 @@ table {
     background: #A9E2F3;
 }
 
+.slides-zone {
+    overflow: hidden;
+}
+
 .slider-wrap {
     position: relative;
     width: 100%;
